@@ -1,15 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Sora Prompt Maker - Web Edition (Research-Optimized)
+Sora Prompt Maker - Web Edition (Production Version)
 Based on OpenAI's documented best practices and architectural insights
 """
 from flask import Flask, render_template, jsonify, request
 import json
 import requests
 from pathlib import Path
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+app.config['JSON_SORT_KEYS'] = False
+app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 
 # Template definitions - optimized based on OpenAI research
 TEMPLATES = [
@@ -330,15 +340,30 @@ BEST_PRACTICES = {
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    """Serve the main application page"""
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        logger.error(f"Error serving index: {e}")
+        return jsonify({'error': 'Failed to load application'}), 500
 
 @app.route('/api/templates')
 def get_templates():
-    return jsonify(TEMPLATES)
+    """Return available prompt templates"""
+    try:
+        return jsonify(TEMPLATES)
+    except Exception as e:
+        logger.error(f"Error fetching templates: {e}")
+        return jsonify({'error': 'Failed to fetch templates'}), 500
 
 @app.route('/api/best_practices')
 def get_best_practices():
-    return jsonify(BEST_PRACTICES)
+    """Return best practices guide"""
+    try:
+        return jsonify(BEST_PRACTICES)
+    except Exception as e:
+        logger.error(f"Error fetching best practices: {e}")
+        return jsonify({'error': 'Failed to fetch best practices'}), 500
 
 @app.route('/api/ollama_models')
 def get_ollama_models():
@@ -355,20 +380,28 @@ def get_ollama_models():
     except requests.exceptions.Timeout:
         return jsonify({'error': 'Ollama request timed out', 'status': 'timeout'}), 504
     except Exception as e:
-        return jsonify({'error': str(e), 'status': 'error'}), 500
+        logger.error(f"Unexpected error fetching Ollama models: {e}")
+        return jsonify({'error': 'Unexpected error', 'status': 'error'}), 500
 
 @app.route('/api/generate_prompt', methods=['POST'])
 def generate_prompt():
-    data = request.json
-    template_name = data.get('template')
-    values = data.get('values', {})
-    include_labels = data.get('include_labels', True)
-    
-    template = next((t for t in TEMPLATES if t['name'] == template_name), None)
-    if not template:
-        return jsonify({'error': 'Template not found'}), 404
-    
+    """Generate a prompt from template and field values"""
     try:
+        data = request.json
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        template_name = data.get('template')
+        values = data.get('values', {})
+        include_labels = data.get('include_labels', True)
+        
+        if not template_name:
+            return jsonify({'error': 'Template name required'}), 400
+        
+        template = next((t for t in TEMPLATES if t['name'] == template_name), None)
+        if not template:
+            return jsonify({'error': 'Template not found'}), 404
+        
         tpl_text = template['template']
         rendered = tpl_text.format(**values)
         
@@ -378,11 +411,10 @@ def generate_prompt():
             for line in rendered.splitlines():
                 if ':' in line:
                     parts = line.split(':', 1)
-                    # Check if it looks like a label (all caps or title case before colon)
                     label = parts[0].strip()
                     if label.isupper() or label.replace(' ', '').replace('/', '').replace('-', '').isalpha():
                         content = parts[1].strip()
-                        if content:  # Only add non-empty content
+                        if content:
                             lines.append(content)
                     else:
                         lines.append(line.strip())
@@ -400,28 +432,39 @@ def generate_prompt():
             'optimal': 50 <= word_count <= 120
         })
     except KeyError as e:
-        return jsonify({'error': f'Missing field: {e}'}), 400
+        return jsonify({'error': f'Missing required field: {e}'}), 400
+    except Exception as e:
+        logger.error(f"Error generating prompt: {e}")
+        return jsonify({'error': 'Failed to generate prompt'}), 500
 
 @app.route('/api/ollama_assist', methods=['POST'])
 def ollama_assist():
-    data = request.json
-    user_prompt = data.get('user_prompt', '')
-    template_name = data.get('template')
-    current_values = data.get('current_values', {})
-    model = data.get('model', 'llama3.2')
-    
-    template = next((t for t in TEMPLATES if t['name'] == template_name), None)
-    if not template:
-        return jsonify({'error': 'Template not found'}), 404
-    
-    # Build enhanced system prompt with research insights
-    field_descriptions = '\n'.join([
-        f"- {f['id']}: {f['label']}"
-        + (f" (tip: {f['tip']})" if 'tip' in f else "")
-        for f in template['fields']
-    ])
-    
-    system_prompt = f"""You are an expert at creating Sora video generation prompts based on OpenAI's documented best practices.
+    """AI-assisted prompt generation via Ollama"""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        user_prompt = data.get('user_prompt', '')
+        template_name = data.get('template')
+        current_values = data.get('current_values', {})
+        model = data.get('model', 'llama3.2')
+        
+        if not template_name:
+            return jsonify({'error': 'Template name required'}), 400
+        
+        template = next((t for t in TEMPLATES if t['name'] == template_name), None)
+        if not template:
+            return jsonify({'error': 'Template not found'}), 404
+        
+        # Build enhanced system prompt with research insights
+        field_descriptions = '\n'.join([
+            f"- {f['id']}: {f['label']}"
+            + (f" (tip: {f['tip']})" if 'tip' in f else "")
+            for f in template['fields']
+        ])
+        
+        system_prompt = f"""You are an expert at creating Sora video generation prompts based on OpenAI's documented best practices.
 
 TEMPLATE: {template_name}
 {template.get('guidance', '')}
@@ -446,7 +489,6 @@ BEST PRACTICES (apply these):
 Based on the user's concept, suggest creative but technically sound values for ALL fields.
 Output ONLY valid JSON with field IDs as keys. No explanations, just the JSON."""
 
-    try:
         response = requests.post(
             'http://localhost:11434/api/generate',
             json={
@@ -461,6 +503,7 @@ Output ONLY valid JSON with field IDs as keys. No explanations, just the JSON.""
             result = response.json()
             llm_response = result.get('response', '')
             
+            # Try to extract JSON from response
             try:
                 start = llm_response.find('{')
                 end = llm_response.rfind('}') + 1
@@ -468,7 +511,7 @@ Output ONLY valid JSON with field IDs as keys. No explanations, just the JSON.""
                     suggestions = json.loads(llm_response[start:end])
                     return jsonify({'suggestions': suggestions})
             except json.JSONDecodeError:
-                pass
+                logger.warning(f"Could not parse LLM JSON response")
             
             return jsonify({'error': 'Could not parse LLM response', 'raw': llm_response}), 500
         else:
@@ -476,24 +519,53 @@ Output ONLY valid JSON with field IDs as keys. No explanations, just the JSON.""
             
     except requests.exceptions.ConnectionError:
         return jsonify({'error': 'Could not connect to Ollama. Make sure Ollama is running on localhost:11434'}), 503
+    except requests.exceptions.Timeout:
+        return jsonify({'error': 'Ollama request timed out'}), 504
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Error in Ollama assist: {e}")
+        return jsonify({'error': 'Unexpected error'}), 500
+
+@app.errorhandler(404)
+def not_found(e):
+    """Handle 404 errors"""
+    return jsonify({'error': 'Resource not found'}), 404
+
+@app.errorhandler(500)
+def internal_error(e):
+    """Handle 500 errors"""
+    logger.error(f"Internal server error: {e}")
+    return jsonify({'error': 'Internal server error'}), 500
+
+def initialize_app():
+    """Initialize application directories and resources"""
+    try:
+        Path('templates').mkdir(exist_ok=True)
+        Path('static').mkdir(exist_ok=True)
+        logger.info("Application directories initialized")
+    except Exception as e:
+        logger.error(f"Failed to initialize directories: {e}")
+        raise
 
 if __name__ == '__main__':
-    Path('templates').mkdir(exist_ok=True)
-    Path('static').mkdir(exist_ok=True)
-    
-    print("\n" + "="*70)
-    print("SORA PROMPT MAKER - RESEARCH-OPTIMIZED EDITION")
-    print("="*70)
-    print("\nBased on OpenAI's documented best practices:")
-    print("  ✓ 50-120 word optimal prompts")
-    print("  ✓ Professional film terminology")
-    print("  ✓ Physics-accurate descriptions")
-    print("  ✓ Structured hierarchical prompting")
-    print("\nServer starting at: http://localhost:5000")
-    print("\nOptional: Start Ollama for AI-assisted prompt generation")
-    print("   ollama run llama3.2")
-    print("="*70 + "\n")
-    
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    try:
+        initialize_app()
+        
+        print("\n" + "="*70)
+        print("SORA PROMPT MAKER - PRODUCTION MODE")
+        print("="*70)
+        print("\nBased on OpenAI's documented best practices:")
+        print("  ✓ 50-120 word optimal prompts")
+        print("  ✓ Professional film terminology")
+        print("  ✓ Physics-accurate descriptions")
+        print("  ✓ Structured hierarchical prompting")
+        print("\nServer running at: http://127.0.0.1:5000")
+        print("(Local access only)")
+        print("\nOptional: Start Ollama for AI-assisted prompt generation")
+        print("   ollama run llama3.2")
+        print("="*70 + "\n")
+        
+        app.run(host='127.0.0.1', port=5000, debug=False)
+    except Exception as e:
+        logger.critical(f"Failed to start application: {e}")
+        print(f"\n[CRITICAL ERROR] Application failed to start: {e}\n")
+        exit(1)

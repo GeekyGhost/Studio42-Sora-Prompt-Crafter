@@ -1,6 +1,6 @@
 # Studio42-Sora-Prompt-Crafter
 
-This is probably the best I can/am going to do on this, so if anymore better equipped wants to take it over, it's under an MIT so have at it. 
+This is probably the best I can/am going to do on this, so if anyone better equipped wants to take it over, it's under an MIT so have at it. 
 
 Uses Ollama for local LLM assistance
 

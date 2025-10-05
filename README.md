@@ -6,6 +6,17 @@
 
 
 
+
+https://github.com/user-attachments/assets/f3b55b18-b4fe-4e68-9fc9-0988a178a54a
+
+
+
+<img width="1265" height="674" alt="Screenshot 2025-10-04 222954" src="https://github.com/user-attachments/assets/b7e420db-0371-4c67-b835-bc146bf09cbf" />
+
+
+<img width="1268" height="673" alt="Screenshot 2025-10-04 222933" src="https://github.com/user-attachments/assets/fbe47b68-e33e-466f-96ae-2b413669757a" />
+
+
 A Hitchhiker's Guide to the Galaxy meets Star Trek LCARS inspired AI-powered prompt crafting tool for Sora video generation.
 
 
@@ -563,4 +574,5 @@ Part of the Studio 42 creative suite. For internal use.
 
 
 \*Made with ❤️ and a towel by Studio 42\*
+
 

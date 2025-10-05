@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studio 42 - Sora Prompt Crafter</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background: #000;
+            color: #ffaa00;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* LCARS Styling */
+        .lcars-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        /* Top Header Bar */
+        .lcars-header {
+            background: linear-gradient(90deg, #cc6699 0%, #9966cc 50%, #6699cc 100%);
+            height: 60px;
+            display: flex;
+            align-items: center;
+            padding: 0 30px;
+            border-radius: 0 0 30px 0;
+            position: relative;
+        }
+        
+        .lcars-header::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 200px;
+            height: 60px;
+            background: #000;
+            border-radius: 30px 0 0 30px;
+        }
+        
+        .studio-badge {
+            background: #ffaa00;
+            color: #000;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 1.2em;
+            letter-spacing: 2px;
+            z-index: 10;
+            box-shadow: 0 0 20px rgba(255, 170, 0, 0.6);
+            animation: pulse-glow 2s infinite;
+        }
+        
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 170, 0, 0.6); }
+            50% { box-shadow: 0 0 30px rgba(255, 170, 0, 0.9); }
+        }
+        
+        .title-section {
+            flex: 1;
+            text-align: center;
+            z-index: 10;
+        }
+        
+        .main-title {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 2.5em;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+        
+        /* Main Content Area */
+        .lcars-main {
+            display: flex;
+            flex: 1;
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        /* Left Sidebar */
+        .lcars-sidebar-left {
+            width: 200px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .lcars-pill {
+            background: #cc6699;
+            height: 50px;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            color: #000;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .lcars-pill:hover {
+            background: #ff9933;
+            transform: translateX(5px);
+        }
+        
+        .lcars-pill.active {
+            background: #ffaa00;
+            box-shadow: 0 0 20px rgba(255, 170, 0, 0.8);
+        }
+        
+        .lcars-pill.orange { background: #ff9933; }
+        .lcars-pill.purple { background: #9966cc; }
+        .lcars-pill.blue { background: #6699cc; }
+        .lcars-pill.pink { background: #cc6699; }
+        
+        .lcars-status-block {
+            background: #333;
+            border: 3px solid #ffaa00;
+            border-radius: 15px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 0.85em;
+        }
+        
+        .status-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 5px;
+            background: rgba(255, 170, 0, 0.1);
+            border-radius: 5px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: blink 1.5s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        .status-online { background: #00ff00; animation: none; }
+        .status-offline { background: #ff0000; }
+        .status-loading { background: #ffaa00; }
+        
+        /* Main Content Panel */
+        .lcars-content {
+            flex: 1;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            border-radius: 20px;
+            padding: 30px;
+            border: 3px solid #9966cc;
+            box-shadow: 0 0 30px rgba(153, 102, 204, 0.3);
+            overflow-y: auto;
+            max-height: calc(100vh - 120px);
+        }
+        
+        .panel-header {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 1.8em;
+            color: #ffaa00;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #ffaa00;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        
+        .section-block {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #cc6699;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 1.2em;
+            color: #ff9933;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-number {
+            background: #ff9933;
+            color: #000;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+        }
+        
+        /* Form Elements */
+        label {
+            display: block;
+            color: #ffaa00;
+            font-weight: 700;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+        
+        .field-tip {
+            display: block;
+            font-size: 0.8em;
+            color: #6699cc;
+            font-weight: normal;
+            margin-top: 4px;
+            font-style: italic;
+        }
+        
+        input[type="text"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #9966cc;
+            border-radius: 10px;
+            color: #ffaa00;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+        
+        input[type="text"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #ffaa00;
+            box-shadow: 0 0 15px rgba(255, 170, 0, 0.5);
+        }
+        
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        /* Buttons */
+        .lcars-btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .lcars-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .lcars-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .lcars-btn span {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #ff9933 0%, #ffaa00 100%);
+            color: #000;
+            box-shadow: 0 5px 20px rgba(255, 170, 0, 0.4);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 170, 0, 0.6);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #6699cc 0%, #9966cc 100%);
+            color: #fff;
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #cc3366 0%, #ff3366 100%);
+            color: #fff;
+        }
+        
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.85em;
+        }
+        
+        .lcars-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        /* Image Upload Area */
+        .image-upload-zone {
+            border: 3px dashed #9966cc;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(153, 102, 204, 0.1);
+            position: relative;
+        }
+        
+        .image-upload-zone:hover {
+            border-color: #ffaa00;
+            background: rgba(255, 170, 0, 0.1);
+        }
+        
+        .image-upload-zone.dragover {
+            border-color: #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+        }
+        
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        
+        .image-preview-container {
+            position: relative;
+            margin-top: 15px;
+        }
+        
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            border: 2px solid #ffaa00;
+        }
+        
+        .image-info {
+            margin-top: 10px;
+            font-size: 0.85em;
+            color: #6699cc;
+        }
+        
+        .clear-image-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff3366;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            font-size: 1.5em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 10px rgba(255, 51, 102, 0.5);
+            transition: all 0.3s;
+        }
+        
+        .clear-image-btn:hover {
+            background: #ff0033;
+            transform: scale(1.1);
+        }
+        
+        /* Sliders */
+        .slider-container {
+            margin-bottom: 20px;
+        }
+        
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .slider-label {
+            font-size: 0.8em;
+            color: #9966cc;
+            min-width: 60px;
+        }
+        
+        input[type="range"] {
+            flex: 1;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #6699cc 0%, #9966cc 50%, #cc6699 100%);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #ffaa00;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 170, 0, 0.8);
+            border: 2px solid #000;
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #ffaa00;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 170, 0, 0.8);
+            border: 2px solid #000;
+        }
+        
+        .slider-value {
+            min-width: 70px;
+            text-align: center;
+            font-weight: 700;
+            color: #ffaa00;
+            font-size: 1.1em;
+            background: rgba(255, 170, 0, 0.2);
+            padding: 5px 10px;
+            border-radius: 10px;
+        }
+        
+        /* Output Display */
+        .output-terminal {
+            background: #000;
+            border: 3px solid #00ff00;
+            border-radius: 15px;
+            padding: 20px;
+            font-family: 'Roboto Mono', monospace;
+            color: #00ff00;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 500px;
+            overflow-y: auto;
+            box-shadow: inset 0 0 20px rgba(0, 255, 0, 0.2);
+            position: relative;
+        }
+        
+        .output-terminal::before {
+            content: '> ';
+            color: #ffaa00;
+        }
+        
+        .terminal-header {
+            background: #00ff00;
+            color: #000;
+            padding: 8px 15px;
+            border-radius: 10px 10px 0 0;
+            font-weight: 700;
+            margin: -20px -20px 15px -20px;
+        }
+        
+        .word-count-display {
+            background: rgba(0, 255, 0, 0.2);
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 10px 20px;
+            margin-top: 15px;
+            text-align: center;
+            font-weight: 700;
+        }
+        
+        .word-count-display.optimal {
+            border-color: #00ff00;
+            color: #00ff00;
+        }
+        
+        .word-count-display.suboptimal {
+            border-color: #ffaa00;
+            color: #ffaa00;
+        }
+        
+        /* Alerts */
+        .lcars-alert {
+            padding: 15px 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border-left: 5px solid;
+        }
+        
+        .alert-info {
+            background: rgba(102, 153, 204, 0.2);
+            border-color: #6699cc;
+            color: #6699cc;
+        }
+        
+        .alert-success {
+            background: rgba(0, 255, 0, 0.2);
+            border-color: #00ff00;
+            color: #00ff00;
+        }
+        
+        .alert-error {
+            background: rgba(255, 51, 102, 0.2);
+            border-color: #ff3366;
+            color: #ff3366;
+        }
+        
+        .alert-warning {
+            background: rgba(255, 170, 0, 0.2);
+            border-color: #ffaa00;
+            color: #ffaa00;
+        }
+        
+        /* Collapsible */
+        .collapsible-panel {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #9966cc;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .collapsible-header {
+            padding: 15px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            color: #ff9933;
+            background: rgba(153, 102, 204, 0.1);
+            transition: all 0.3s;
+        }
+        
+        .collapsible-header:hover {
+            background: rgba(255, 153, 51, 0.2);
+        }
+        
+        .collapsible-content {
+            padding: 20px;
+            display: none;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .collapsible-panel.expanded .collapsible-content {
+            display: block;
+        }
+        
+        .collapsible-arrow {
+            transition: transform 0.3s;
+            font-size: 1.2em;
+        }
+        
+        .collapsible-panel.expanded .collapsible-arrow {
+            transform: rotate(90deg);
+        }
+        
+        /* Model Selector */
+        .model-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .model-btn {
+            padding: 10px 20px;
+            background: rgba(153, 102, 204, 0.3);
+            border: 2px solid #9966cc;
+            border-radius: 10px;
+            color: #9966cc;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .model-btn:hover {
+            background: rgba(255, 153, 51, 0.3);
+            border-color: #ff9933;
+            color: #ff9933;
+        }
+        
+        .model-btn.active {
+            background: #ffaa00;
+            border-color: #ffaa00;
+            color: #000;
+            box-shadow: 0 0 15px rgba(255, 170, 0, 0.6);
+        }
+        
+        /* Debug console */
+        .debug-console {
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #6699cc;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 0.85em;
+            color: #6699cc;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+        
+        .debug-console.show {
+            display: block;
+        }
+        
+        .debug-line {
+            margin-bottom: 5px;
+            padding: 3px 5px;
+            border-left: 3px solid #6699cc;
+            padding-left: 10px;
+        }
+        
+        .debug-error {
+            border-left-color: #ff3366;
+            color: #ff3366;
+        }
+        
+        .debug-success {
+            border-left-color: #00ff00;
+            color: #00ff00;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .lcars-sidebar-left {
+                display: none;
+            }
+            
+            .main-title {
+                font-size: 1.8em;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .lcars-header {
+                flex-direction: column;
+                height: auto;
+                padding: 15px;
+                border-radius: 0;
+            }
+            
+            .main-title {
+                font-size: 1.5em;
+            }
+            
+            .lcars-content {
+                padding: 15px;
+            }
+        }
+        
+        /* Loading Animation */
+        .loading-spinner {
+            border: 4px solid rgba(255, 170, 0, 0.3);
+            border-top: 4px solid #ffaa00;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin: 0 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="lcars-container">
+        <!-- Header -->
+        <div class="lcars-header">
+            <div class="studio-badge">STUDIO 42</div>
+            <div class="title-section">
+                <div class="main-title">PROMPT CRAFTER</div>
+            </div>
+        </div>
+        
+        <!-- Main Layout -->
+        <div class="lcars-main">
+            <!-- Left Sidebar -->
+            <div class="lcars-sidebar-left">
+                <div class="lcars-pill active pink" onclick="scrollToSection('model')">
+                    <span>◆ MODEL</span>
+                </div>
+                <div class="lcars-pill orange" onclick="scrollToSection('ai')">
+                    <span>◆ AI ASSIST</span>
+                </div>
+                <div class="lcars-pill purple" onclick="scrollToSection('fields')">
+                    <span>◆ FIELDS</span>
+                </div>
+                <div class="lcars-pill blue" onclick="scrollToSection('output')">
+                    <span>◆ OUTPUT</span>
+                </div>
+                
+                <div class="lcars-status-block">
+                    <div style="color: #ffaa00; font-weight: 700; margin-bottom: 10px;">SYSTEM STATUS</div>
+                    <div class="status-line">
+                        <span>OLLAMA</span>
+                        <span id="sidebarOllamaStatus"><span class="status-indicator status-loading"></span>...</span>
+                    </div>
+                    <div class="status-line">
+                        <span>TEMPLATES</span>
+                        <span id="sidebarTemplateStatus"><span class="status-indicator status-loading"></span>...</span>
+                    </div>
+                    <div class="status-line">
+                        <span>VISION</span>
+                        <span id="sidebarVisionStatus"><span class="status-indicator status-offline"></span>N/A</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="lcars-content">
+                <div class="panel-header">🎬 PROMPT GENERATION SYSTEM</div>
+                
+                <!-- Model Selection -->
+                <div id="model" class="section-block">
+                    <div class="section-title">
+                        <span class="section-number">1</span>
+                        SELECT AI MODEL
+                    </div>
+                    <div class="model-selector">
+                        <button class="model-btn active" data-model="sora" onclick="selectModel('sora')">
+                            <span>SORA</span>
+                        </button>
+                        <button class="model-btn" data-model="wan" onclick="selectModel('wan')">
+                            <span>WAN</span>
+                        </button>
+                        <button class="model-btn" data-model="qwen" onclick="selectModel('qwen')">
+                            <span>QWEN</span>
+                        </button>
+                        <button class="model-btn" data-model="nano" onclick="selectModel('nano')">
+                            <span>NANO BANANA</span>
+                        </button>
+                    </div>
+                    <div id="modelDescription" class="lcars-alert alert-info" style="margin-top: 15px;">
+                        <strong>SORA</strong> - OpenAI's cinematic video generation model with advanced physics simulation and temporal consistency.
+                    </div>
+                </div>
+                
+                <!-- Template Selection -->
+                <div id="template" class="section-block">
+                    <div class="section-title">
+                        <span class="section-number">2</span>
+                        SELECT TEMPLATE PROTOCOL
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label for="templateSelect">Active Template Module</label>
+                        <select id="templateSelect">
+                            <option value="">Initializing template database...</option>
+                        </select>
+                    </div>
+                    <div id="templateDescription" class="lcars-alert alert-info" style="display:none;"></div>
+                </div>
+                
+                <!-- AI Assistant Section -->
+                <div id="ai" class="section-block">
+                    <div class="section-title">
+                        <span class="section-number">3</span>
+                        AI NEURAL NETWORK ASSISTANT
+                    </div>
+                    
+                    <div id="ollamaStatus" class="lcars-alert alert-info">
+                        <div class="loading-spinner"></div>
+                        Establishing connection to local AI matrix...
+                    </div>
+                    
+                    <div id="ollamaControls" style="display:none;">
+                        <div style="margin-bottom: 15px;">
+                            <label for="ollamaModel">Neural Network Model</label>
+                            <select id="ollamaModel">
+                                <option value="">Scanning for available models...</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Image Upload for Vision Models -->
+                        <div id="visionUploadSection" style="margin-bottom: 20px; display: none;">
+                            <label>🖼️ REFERENCE IMAGE UPLOAD (Vision Models)</label>
+                            <div class="lcars-alert alert-info" style="margin-bottom: 10px;">
+                                <strong>📸 HOW IT WORKS:</strong> Upload an image and the vision AI will automatically analyze it and write a video concept description for you. The description will appear in the text field below where you can review and edit it before generating your prompt.
+                            </div>
+                            <div class="image-upload-zone" id="imageDropZone" onclick="document.getElementById('imageInput').click()">
+                                <div id="uploadPrompt">
+                                    <div class="upload-icon">🖼️</div>
+                                    <div style="color: #9966cc; font-weight: 700;">DRAG & DROP IMAGE HERE</div>
+                                    <div style="color: #6699cc; font-size: 0.85em; margin-top: 10px;">Vision AI will analyze and write a concept description automatically</div>
+                                </div>
+                                <input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="handleImageUpload(event)">
+                                <div id="imagePreviewContainer"></div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label for="userPrompt">
+                                Video Concept Description
+                                <span class="field-tip">Type your concept OR upload an image above - vision AI will analyze and describe it automatically!</span>
+                            </label>
+                            <textarea id="userPrompt" placeholder="Example: A military tank rolling across a vast desert landscape at sunset, with sand kicking up behind it..."></textarea>
+                        </div>
+                        
+                        <!-- Generation Controls (Collapsible) -->
+                        <div class="collapsible-panel" id="generationControls">
+                            <div class="collapsible-header">
+                                <span>⚙️ NEURAL NETWORK PARAMETERS</span>
+                                <span class="collapsible-arrow">▶</span>
+                            </div>
+                            <div class="collapsible-content">
+                                <!-- Temperature -->
+                                <div class="slider-container">
+                                    <label>
+                                        CREATIVITY LEVEL (Temperature)
+                                        <span class="field-tip">Lower = Focused & Consistent | Higher = Creative & Diverse</span>
+                                    </label>
+                                    <div class="slider-row">
+                                        <span class="slider-label">LOGICAL</span>
+                                        <input type="range" id="temperature" min="0" max="2" step="0.1" value="1.0">
+                                        <span class="slider-label">CHAOTIC</span>
+                                        <span class="slider-value" id="temperatureValue">1.0</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Top P -->
+                                <div class="slider-container">
+                                    <label>
+                                        RESPONSE DIVERSITY (Top-P / Nucleus Sampling)
+                                        <span class="field-tip">Probability threshold for token selection</span>
+                                    </label>
+                                    <div class="slider-row">
+                                        <span class="slider-label">NARROW</span>
+                                        <input type="range" id="topP" min="0" max="1" step="0.05" value="0.9">
+                                        <span class="slider-label">WIDE</span>
+                                        <span class="slider-value" id="topPValue">0.9</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Top K -->
+                                <div class="slider-container">
+                                    <label>
+                                        TOKEN POOL SIZE (Top-K)
+                                        <span class="field-tip">Number of possible word choices considered</span>
+                                    </label>
+                                    <div class="slider-row">
+                                        <span class="slider-label">FEW</span>
+                                        <input type="range" id="topK" min="1" max="100" step="1" value="40">
+                                        <span class="slider-label">MANY</span>
+                                        <span class="slider-value" id="topKValue">40</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Seed -->
+                                <div style="margin-bottom: 15px;">
+                                    <label for="seed">
+                                        REPRODUCIBILITY SEED (Optional)
+                                        <span class="field-tip">Leave blank for variation. Set number for identical results.</span>
+                                    </label>
+                                    <div style="display: flex; gap: 10px;">
+                                        <input type="text" id="seed" placeholder="Random (blank for variation)" style="flex: 1;">
+                                        <button class="lcars-btn btn-danger btn-small" onclick="clearSeed()"><span>CLEAR</span></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button id="aiAssistBtn" class="lcars-btn btn-primary" onclick="getAIAssist()" style="margin-top: 20px; width: 100%;">
+                            <span>✨ ENGAGE AI NEURAL NETWORK</span>
+                        </button>
+                        
+                        <!-- Debug Console -->
+                        <div id="debugConsole" class="debug-console"></div>
+                    </div>
+                </div>
+                
+                <!-- Manual Fields -->
+                <div id="fields" class="section-block">
+                    <div class="section-title">
+                        <span class="section-number">4</span>
+                        MANUAL FIELD INPUT
+                    </div>
+                    <div id="templateFields">
+                        <div class="lcars-alert alert-info">Select a template to access field inputs</div>
+                    </div>
+                </div>
+                
+                <!-- Output Section -->
+                <div id="output" class="section-block">
+                    <div class="section-title">
+                        <span class="section-number">5</span>
+                        PROMPT GENERATION & OUTPUT
+                    </div>
+                    
+                    <div class="button-group">
+                        <button class="lcars-btn btn-primary" onclick="generatePrompt()">
+                            <span>🎬 GENERATE PROMPT</span>
+                        </button>
+                        <button class="lcars-btn btn-secondary" onclick="copyPrompt()">
+                            <span>📋 COPY TO CLIPBOARD</span>
+                        </button>
+                        <button class="lcars-btn btn-secondary" onclick="resetFields()">
+                            <span>🔄 RESET ALL FIELDS</span>
+                        </button>
+                    </div>
+                    
+                    <div id="outputContainer" style="display:none; margin-top: 20px;">
+                        <div class="output-terminal">
+                            <div class="terminal-header">GENERATED PROMPT OUTPUT</div>
+                            <div id="outputPrompt"></div>
+                        </div>
+                        <div class="word-count-display" id="wordCount"></div>
+                    </div>
+                </div>
+                
+                <!-- Best Practices -->
+                <div class="collapsible-panel">
+                    <div class="collapsible-header">
+                        <span>📚 PRODUCTION BEST PRACTICES DATABASE</span>
+                        <span class="collapsible-arrow">▶</span>
+                    </div>
+                    <div class="collapsible-content" id="bestPractices">
+                        <div class="loading-spinner"></div> Loading best practices archive...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let templates = [];
+        let allTemplates = [];
+        let currentTemplate = null;
+        let fieldValues = {};
+        let uploadedImage = null;
+        let currentModel = 'sora';
+        
+        const MODEL_DESCRIPTIONS = {
+            'sora': '<strong>SORA</strong> - OpenAI\'s cinematic video generation model with advanced physics simulation and temporal consistency.',
+            'wan': '<strong>WAN</strong> - Alibaba\'s open-source video model (2.1, 2.2, 2.5) with native audio-video sync and multilingual support.',
+            'qwen': '<strong>QWEN</strong> - Qwen Image Edit 2509 - Multi-image editing with identity preservation and text manipulation.',
+            'nano': '<strong>NANO BANANA</strong> - Gemini 2.5 Flash - Fast image generation/editing with character consistency.'
+        };
+        
+        // Sound effect functions
+        function playSound(soundId) {
+            try {
+                const sound = document.getElementById(soundId);
+                if (sound) {
+                    sound.currentTime = 0;
+                    sound.play().catch(e => {}); // Silently fail if no audio files
+                }
+            } catch (e) {
+                // Gracefully handle missing audio
+            }
+        }
+        
+        // Debug logger
+        function debugLog(message, type = 'info') {
+            const console_el = document.getElementById('debugConsole');
+            const line = document.createElement('div');
+            line.className = `debug-line ${type === 'error' ? 'debug-error' : type === 'success' ? 'debug-success' : ''}`;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            console_el.appendChild(line);
+            console_el.classList.add('show');
+            console_el.scrollTop = console_el.scrollHeight;
+            console.log(message);
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTemplates();
+            checkOllamaStatus();
+            loadBestPractices();
+            setupCollapsibles();
+            setupSliders();
+            setupImageDragDrop();
+        });
+        
+        function scrollToSection(id) {
+            playSound('sfxBeep');
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function selectModel(model) {
+            playSound('sfxClick');
+            currentModel = model;
+            
+            // Update button states
+            document.querySelectorAll('.model-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-model="${model}"]`).classList.add('active');
+            
+            // Update description
+            const descBox = document.getElementById('modelDescription');
+            descBox.innerHTML = MODEL_DESCRIPTIONS[model];
+            
+            // Load templates for this model
+            loadTemplatesForModel(model);
+            
+            debugLog(`Model switched to: ${model.toUpperCase()}`);
+        }
+        
+        function setupCollapsibles() {
+            document.querySelectorAll('.collapsible-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    header.parentElement.classList.toggle('expanded');
+                });
+            });
+        }
+        
+        function setupSliders() {
+            const temperature = document.getElementById('temperature');
+            const topP = document.getElementById('topP');
+            const topK = document.getElementById('topK');
+            
+            temperature.addEventListener('input', (e) => {
+                document.getElementById('temperatureValue').textContent = e.target.value;
+            });
+            
+            topP.addEventListener('input', (e) => {
+                document.getElementById('topPValue').textContent = e.target.value;
+            });
+            
+            topK.addEventListener('input', (e) => {
+                document.getElementById('topKValue').textContent = e.target.value;
+            });
+        }
+        
+        function setupImageDragDrop() {
+            const dropZone = document.getElementById('imageDropZone');
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.add('dragover');
+                }, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.remove('dragover');
+                }, false);
+            });
+            
+            dropZone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length > 0) {
+                    handleImageFile(files[0]);
+                }
+            }, false);
+        }
+        
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                handleImageFile(file);
+            }
+        }
+        
+        function handleImageFile(file) {
+            if (!file.type.startsWith('image/')) {
+                playSound('sfxError');
+                alert('⚠️ Please upload an image file');
+                return;
+            }
+            
+            playSound('sfxSuccess');
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                uploadedImage = {
+                    data: e.target.result,
+                    name: file.name,
+                    size: file.size
+                };
+                
+                // Hide upload prompt, show preview
+                document.getElementById('uploadPrompt').style.display = 'none';
+                
+                const container = document.getElementById('imagePreviewContainer');
+                container.innerHTML = `
+                    <div class="image-preview-container">
+                        <button class="clear-image-btn" onclick="clearImage()" title="Remove image">×</button>
+                        <img src="${e.target.result}" class="image-preview" alt="Uploaded image">
+                        <div class="image-info">
+                            📁 ${file.name} | 💾 ${(file.size / 1024).toFixed(2)} KB
+                        </div>
+                    </div>
+                `;
+                
+                debugLog(`Image uploaded: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`, 'success');
+                
+                // Automatically analyze image if vision model is selected
+                analyzeImageWithVision();
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        async function analyzeImageWithVision() {
+            const model = document.getElementById('ollamaModel').value;
+            const isVision = model.includes('vision') || model.includes('llava') || model.includes('moondream');
+            
+            if (!isVision) {
+                debugLog('Non-vision model selected, skipping auto-analysis');
+                return;
+            }
+            
+            if (!uploadedImage) {
+                return;
+            }
+            
+            debugLog(`Analyzing image with ${model}...`);
+            
+            // Show loading state in the prompt textarea
+            const promptTextarea = document.getElementById('userPrompt');
+            const originalPlaceholder = promptTextarea.placeholder;
+            promptTextarea.placeholder = '🔍 Analyzing image with vision AI...';
+            promptTextarea.disabled = true;
+            
+            try {
+                const response = await fetch('/api/analyze_image', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        image: uploadedImage,
+                        model: model
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.concept) {
+                    promptTextarea.value = data.concept;
+                    debugLog('✓ Vision analysis complete', 'success');
+                    playSound('sfxSuccess');
+                    
+                    // Show a subtle notification
+                    const visionSection = document.getElementById('visionUploadSection');
+                    const notification = document.createElement('div');
+                    notification.className = 'lcars-alert alert-success';
+                    notification.style.marginTop = '10px';
+                    notification.innerHTML = '✓ Vision AI analyzed the image and generated a video concept description. Review and edit below if needed.';
+                    visionSection.appendChild(notification);
+                    
+                    // Remove notification after 5 seconds
+                    setTimeout(() => notification.remove(), 5000);
+                } else {
+                    debugLog(`Vision analysis error: ${data.error}`, 'error');
+                    playSound('sfxError');
+                    alert(`⚠️ Vision analysis failed: ${data.error}`);
+                }
+            } catch (error) {
+                debugLog(`Vision analysis exception: ${error.message}`, 'error');
+                playSound('sfxError');
+                alert('❌ Failed to analyze image. Check debug console.');
+            } finally {
+                promptTextarea.disabled = false;
+                promptTextarea.placeholder = originalPlaceholder;
+            }
+        }
+        
+        function clearImage() {
+            playSound('sfxClick');
+            uploadedImage = null;
+            document.getElementById('imagePreviewContainer').innerHTML = '';
+            document.getElementById('uploadPrompt').style.display = 'block';
+            document.getElementById('imageInput').value = '';
+            debugLog('Image cleared');
+        }
+        
+        function clearSeed() {
+            playSound('sfxClick');
+            document.getElementById('seed').value = '';
+        }
+        
+        async function loadTemplates() {
+            try {
+                const response = await fetch('/api/templates');
+                allTemplates = await response.json();
+                
+                debugLog(`Loaded ${allTemplates.length} templates total`, 'success');
+                
+                // Load templates for initial model (sora)
+                loadTemplatesForModel('sora');
+                
+                updateSidebarStatus('template', 'online');
+            } catch (error) {
+                console.error('Template load error:', error);
+                debugLog(`Template load error: ${error.message}`, 'error');
+                updateSidebarStatus('template', 'offline');
+            }
+        }
+        
+        function loadTemplatesForModel(model) {
+            // Filter templates for the selected model
+            templates = allTemplates.filter(t => t.model === model);
+            
+            debugLog(`Filtering templates for ${model}: found ${templates.length} templates`);
+            
+            const select = document.getElementById('templateSelect');
+            select.innerHTML = '<option value="">-- SELECT TEMPLATE MODULE --</option>';
+            
+            if (templates.length === 0) {
+                const option = document.createElement('option');
+                option.value = "";
+                option.textContent = `No templates available for ${model.toUpperCase()}`;
+                select.appendChild(option);
+                debugLog(`No templates found for ${model}`, 'error');
+                return;
+            }
+            
+            templates.forEach((template, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = template.name;
+                select.appendChild(option);
+            });
+            
+            // Reset current template when switching models
+            currentTemplate = null;
+            document.getElementById('templateDescription').style.display = 'none';
+            document.getElementById('templateFields').innerHTML = '<div class="lcars-alert alert-info">Select a template to access field inputs</div>';
+            document.getElementById('outputContainer').style.display = 'none';
+            
+            select.onchange = (e) => {
+                if (e.target.value !== '') {
+                    loadTemplate(parseInt(e.target.value));
+                }
+            };
+        }
+        
+        function loadTemplate(index) {
+            playSound('sfxClick');
+            currentTemplate = templates[index];
+            fieldValues = {};
+            
+            debugLog(`Template loaded: ${currentTemplate.name}`, 'success');
+            
+            const descBox = document.getElementById('templateDescription');
+            descBox.style.display = 'block';
+            descBox.className = 'lcars-alert alert-success';
+            descBox.innerHTML = `
+                <div style="font-weight: 700; margin-bottom: 5px;">✓ TEMPLATE LOADED: ${currentTemplate.name}</div>
+                <div style="font-size: 0.9em;">${currentTemplate.description}</div>
+                <div style="font-size: 0.85em; margin-top: 5px; font-style: italic;">Guidance: ${currentTemplate.guidance}</div>
+            `;
+            
+            const fieldsContainer = document.getElementById('templateFields');
+            fieldsContainer.innerHTML = '';
+            
+            currentTemplate.fields.forEach(field => {
+                const fieldDiv = document.createElement('div');
+                fieldDiv.style.marginBottom = '20px';
+                
+                const label = document.createElement('label');
+                label.innerHTML = field.label;
+                
+                if (field.tip) {
+                    const tip = document.createElement('span');
+                    tip.className = 'field-tip';
+                    tip.textContent = field.tip;
+                    label.appendChild(tip);
+                }
+                
+                fieldDiv.appendChild(label);
+                
+                let input;
+                if (field.type === 'text') {
+                    input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = field.default || '';
+                } else if (field.type === 'multiline') {
+                    input = document.createElement('textarea');
+                    input.value = field.default || '';
+                } else if (field.type === 'choice') {
+                    input = document.createElement('select');
+                    field.choices.forEach(choice => {
+                        const option = document.createElement('option');
+                        option.value = choice;
+                        option.textContent = choice;
+                        if (choice === field.default) option.selected = true;
+                        input.appendChild(option);
+                    });
+                }
+                
+                input.id = `field_${field.id}`;
+                input.dataset.fieldId = field.id;
+                fieldValues[field.id] = field.default || '';
+                
+                input.addEventListener('change', (e) => {
+                    fieldValues[e.target.dataset.fieldId] = e.target.value;
+                });
+                
+                fieldDiv.appendChild(input);
+                fieldsContainer.appendChild(fieldDiv);
+            });
+        }
+        
+        async function checkOllamaStatus() {
+            try {
+                const response = await fetch('/api/ollama_models');
+                const data = await response.json();
+                
+                const statusDiv = document.getElementById('ollamaStatus');
+                const controlsDiv = document.getElementById('ollamaControls');
+                
+                if (data.status === 'online') {
+                    statusDiv.innerHTML = '✓ OLLAMA NEURAL NETWORK ONLINE | AI ASSISTANCE AVAILABLE';
+                    statusDiv.className = 'lcars-alert alert-success';
+                    controlsDiv.style.display = 'block';
+                    
+                    const modelSelect = document.getElementById('ollamaModel');
+                    modelSelect.innerHTML = '';
+                    
+                    let hasVision = false;
+                    data.models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model;
+                        const isVision = model.includes('vision') || model.includes('llava') || model.includes('moondream');
+                        option.textContent = model.toUpperCase() + (isVision ? ' [VISION]' : '');
+                        modelSelect.appendChild(option);
+                        if (isVision) hasVision = true;
+                    });
+                    
+                    if (hasVision) {
+                        updateSidebarStatus('vision', 'online');
+                    }
+                    
+                    // Add change listener to show/hide vision upload
+                    modelSelect.addEventListener('change', updateVisionUploadVisibility);
+                    updateVisionUploadVisibility();
+                    
+                    const llama32 = data.models.find(m => m.includes('llama3.2'));
+                    if (llama32) modelSelect.value = llama32;
+                    
+                    updateSidebarStatus('ollama', 'online');
+                    debugLog(`Ollama online: ${data.models.length} models available`, 'success');
+                } else {
+                    statusDiv.innerHTML = '⚠ OLLAMA OFFLINE | Manual mode only. Start Ollama to enable AI assistance.';
+                    statusDiv.className = 'lcars-alert alert-error';
+                    updateSidebarStatus('ollama', 'offline');
+                    debugLog('Ollama offline', 'error');
+                }
+            } catch (error) {
+                updateSidebarStatus('ollama', 'offline');
+                debugLog(`Ollama check failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function updateVisionUploadVisibility() {
+            const modelSelect = document.getElementById('ollamaModel');
+            const visionSection = document.getElementById('visionUploadSection');
+            const selectedModel = modelSelect.value;
+            const isVision = selectedModel.includes('vision') || selectedModel.includes('llava') || selectedModel.includes('moondream');
+            
+            visionSection.style.display = isVision ? 'block' : 'none';
+            
+            if (isVision) {
+                debugLog(`Vision model selected: ${selectedModel}`, 'success');
+            }
+        }
+        
+        function updateSidebarStatus(system, status) {
+            const statusMap = {
+                'ollama': 'sidebarOllamaStatus',
+                'template': 'sidebarTemplateStatus',
+                'vision': 'sidebarVisionStatus'
+            };
+            
+            const el = document.getElementById(statusMap[system]);
+            if (!el) return;
+            
+            const statusClass = status === 'online' ? 'status-online' : 'status-offline';
+            const statusText = status === 'online' ? 'ONLINE' : 'OFFLINE';
+            el.innerHTML = `<span class="status-indicator ${statusClass}"></span>${statusText}`;
+        }
+        
+        async function getAIAssist() {
+            if (!currentTemplate) {
+                playSound('sfxError');
+                alert('⚠️ Select a template module first');
+                debugLog('AI assist failed: No template selected', 'error');
+                return;
+            }
+            
+            const userPrompt = document.getElementById('userPrompt').value.trim();
+            const model = document.getElementById('ollamaModel').value;
+            const temperature = parseFloat(document.getElementById('temperature').value);
+            const topP = parseFloat(document.getElementById('topP').value);
+            const topK = parseInt(document.getElementById('topK').value);
+            const seedValue = document.getElementById('seed').value.trim();
+            const seed = seedValue ? parseInt(seedValue) : null;
+            
+            // Check if we have a concept description
+            if (!userPrompt) {
+                playSound('sfxError');
+                alert('⚠️ Enter a video concept description (or upload an image to auto-generate one)');
+                debugLog('AI assist failed: No concept description provided', 'error');
+                return;
+            }
+            
+            debugLog(`Starting AI assist with model: ${model}`);
+            debugLog(`User prompt: "${userPrompt}"`);
+            
+            const btn = document.getElementById('aiAssistBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span><div class="loading-spinner"></div> PROCESSING...</span>';
+            
+            try {
+                const payload = {
+                    user_prompt: userPrompt,
+                    template: currentTemplate.name,
+                    current_values: fieldValues,
+                    model: model,
+                    temperature: temperature,
+                    top_p: topP,
+                    top_k: topK,
+                    seed: seed
+                };
+                
+                debugLog('Sending request to /api/ollama_assist...');
+                
+                const response = await fetch('/api/ollama_assist', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                
+                debugLog(`Response status: ${response.status}`);
+                
+                const data = await response.json();
+                
+                if (response.ok && data.suggestions) {
+                    debugLog(`Received ${Object.keys(data.suggestions).length} field suggestions`, 'success');
+                    
+                    Object.keys(data.suggestions).forEach(fieldId => {
+                        const input = document.getElementById(`field_${fieldId}`);
+                        if (input) {
+                            input.value = data.suggestions[fieldId];
+                            fieldValues[fieldId] = data.suggestions[fieldId];
+                            debugLog(`Set ${fieldId}: ${data.suggestions[fieldId].substring(0, 50)}...`);
+                        }
+                    });
+                    
+                    playSound('sfxSuccess');
+                    alert('✅ AI NEURAL NETWORK COMPLETE | Review and adjust fields as needed');
+                } else {
+                    const errorMsg = data.error || 'Unknown error';
+                    debugLog(`AI assist error: ${errorMsg}`, 'error');
+                    if (data.raw) {
+                        debugLog(`Raw response: ${data.raw.substring(0, 200)}...`, 'error');
+                    }
+                    playSound('sfxError');
+                    alert(`⚠️ AI Error: ${errorMsg}`);
+                }
+            } catch (error) {
+                console.error('AI error:', error);
+                debugLog(`Exception: ${error.message}`, 'error');
+                playSound('sfxError');
+                alert('❌ NEURAL NETWORK ERROR | Check debug console');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>✨ ENGAGE AI NEURAL NETWORK</span>';
+            }
+        }
+        
+        async function generatePrompt() {
+            if (!currentTemplate) {
+                playSound('sfxError');
+                alert('⚠️ Select a template first');
+                return;
+            }
+            
+            playSound('sfxClick');
+            
+            // Collect ALL field values from inputs
+            const currentValues = {};
+            currentTemplate.fields.forEach(field => {
+                const input = document.getElementById(`field_${field.id}`);
+                if (input) {
+                    currentValues[field.id] = input.value || field.default || '';
+                } else {
+                    currentValues[field.id] = field.default || '';
+                }
+            });
+            
+            try {
+                const response = await fetch('/api/generate_prompt', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        template: currentTemplate.name,
+                        values: currentValues,
+                        include_labels: true
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.prompt) {
+                    playSound('sfxSuccess');
+                    document.getElementById('outputContainer').style.display = 'block';
+                    document.getElementById('outputPrompt').textContent = data.prompt;
+                    
+                    const wordCount = document.getElementById('wordCount');
+                    wordCount.textContent = `WORD COUNT: ${data.word_count} ${data.optimal ? '✓ OPTIMAL' : '⚠ REVIEW LENGTH'}`;
+                    wordCount.className = data.optimal ? 'word-count-display optimal' : 'word-count-display suboptimal';
+                    
+                    document.getElementById('output').scrollIntoView({ behavior: 'smooth' });
+                    debugLog(`Prompt generated: ${data.word_count} words`, 'success');
+                } else {
+                    playSound('sfxError');
+                    alert('❌ Generation failed: ' + (data.error || 'Unknown error'));
+                    debugLog(`Generation failed: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                console.error('Generation error:', error);
+                playSound('sfxError');
+                alert('❌ GENERATION FAILED: ' + error.message);
+                debugLog(`Generation error: ${error.message}`, 'error');
+            }
+        }
+        
+        function copyPrompt() {
+            const prompt = document.getElementById('outputPrompt').textContent;
+            if (!prompt) {
+                playSound('sfxError');
+                alert('⚠️ Generate a prompt first');
+                return;
+            }
+            
+            navigator.clipboard.writeText(prompt).then(() => {
+                playSound('sfxSuccess');
+                alert('✅ COPIED TO CLIPBOARD');
+                debugLog('Prompt copied to clipboard', 'success');
+            }).catch(() => {
+                playSound('sfxError');
+                alert('❌ COPY FAILED');
+            });
+        }
+        
+        function resetFields() {
+            playSound('sfxClick');
+            if (currentTemplate) {
+                currentTemplate.fields.forEach(field => {
+                    const input = document.getElementById(`field_${field.id}`);
+                    if (input) {
+                        input.value = field.default || '';
+                        fieldValues[field.id] = field.default || '';
+                    }
+                });
+                document.getElementById('userPrompt').value = '';
+                clearImage();
+                playSound('sfxSuccess');
+                alert('✅ FIELDS RESET TO DEFAULT VALUES');
+                debugLog('Fields reset to defaults', 'success');
+            }
+        }
+        
+        async function loadBestPractices() {
+            try {
+                const response = await fetch('/api/best_practices');
+                const practices = await response.json();
+                
+                const container = document.getElementById('bestPractices');
+                container.innerHTML = '';
+                
+                Object.keys(practices).forEach(key => {
+                    const item = document.createElement('div');
+                    item.style.marginBottom = '15px';
+                    item.style.padding = '10px';
+                    item.style.background = 'rgba(255, 170, 0, 0.1)';
+                    item.style.borderRadius = '10px';
+                    item.innerHTML = `<div style="color: #ffaa00; font-weight: 700; margin-bottom: 5px;">${key.replace(/_/g, ' ').toUpperCase()}</div><div style="color: #6699cc;">${practices[key]}</div>`;
+                    container.appendChild(item);
+                });
+                
+                debugLog('Best practices loaded', 'success');
+            } catch (error) {
+                console.error('Best practices load error:', error);
+                debugLog(`Best practices error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+    
+    <!-- Audio elements for sound effects (optional - will fail gracefully if files don't exist) -->
+    <audio id="sfxClick" preload="auto">
+        <source src="/static/sounds/click.wav" type="audio/wav">
+    </audio>
+    <audio id="sfxSuccess" preload="auto">
+        <source src="/static/sounds/success.ogg" type="audio/ogg">
+    </audio>
+    <audio id="sfxError" preload="auto">
+        <source src="/static/sounds/error.wav" type="audio/wav">
+    </audio>
+    <audio id="sfxBeep" preload="auto">
+        <source src="/static/sounds/beep.wav" type="audio/wav">
+    </audio>
+</body>
+</html>
